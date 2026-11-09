@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Battaglia Navale</title>
+<style>
+:root{--bg:#0b1726;--panel:#12233a;--sea:#173a5e;--line:#0e2a45;--ship:#9fb3c8;--hit:#ff4d4d;--sunk:#7a1a1a;--miss:#cfe3ff;--acc:#ffb020;--txt:#e8f0fa;--mut:#8aa4c0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:#0b1726}
+body{margin:0;background:radial-gradient(circle at 50% -20%,#1b3b63,#0b1726 60%) fixed;color:var(--txt);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+main{max-width:460px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:22px;margin:4px 0 2px;letter-spacing:.5px}
+.sub{color:var(--mut);font-size:13px;margin-bottom:14px}
+.card{background:var(--panel);border:1px solid #1f3756;border-radius:14px;padding:14px;margin-bottom:12px}
+.card p{margin:6px 0 10px}
+button{font:inherit;border:0;border-radius:10px;padding:12px 14px;background:#24456d;color:var(--txt);font-weight:600;cursor:pointer}
+button.pri{background:var(--acc);color:#1a1200}
+button:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.full{width:100%}
+input{font:inherit;font-size:24px;letter-spacing:8px;text-align:center;padding:10px;border-radius:10px;border:1px solid #2b4a70;background:#0d1d31;color:var(--txt);width:100%;margin-bottom:8px}
+.code{font-size:44px;font-weight:800;letter-spacing:10px;text-align:center;color:var(--acc);margin:4px 0}
+.status{padding:10px 12px;border-radius:10px;background:#0d1d31;text-align:center;font-weight:600;margin-bottom:10px}
+.status.me{background:#3a2a05;color:var(--acc)}
+.status.win{background:#0f3d22;color:#7dffb0}
+.status.lose{background:#3d0f0f;color:#ff9a9a}
+.board{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;background:var(--line);padding:2px;border-radius:8px;width:100%;aspect-ratio:1/1;touch-action:manipulation;user-select:none}
+.board.small{width:62%;margin:0 auto}
+.board.active{box-shadow:0 0 0 2px var(--acc)}
+.c{background:var(--sea);border-radius:3px;position:relative}
+.c.ship{background:var(--ship)}
+.c.miss::after{content:"";position:absolute;inset:36%;border-radius:50%;background:var(--miss);opacity:.85}
+.c.hit{background:var(--hit)}
+.c.sunk{background:var(--sunk)}
+.c.hit::after,.c.sunk::after{content:"✕";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-weight:900;font-size:min(3.6vw,15px)}
+.c.pend{animation:p .5s infinite alternate}
+@keyframes p{to{background:var(--acc)}}
+.c.last{outline:2px solid var(--acc);outline-offset:-2px}
+.lbl{font-size:13px;color:var(--mut);margin:12px 0 6px;display:flex;justify-content:space-between}
+.fleet{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;margin-top:10px}
+.fleet span{padding:3px 9px;border-radius:20px;background:#0d1d31}
+.fleet span.done{color:var(--mut)}
+.fleet span.cur{background:var(--acc);color:#1a1200;font-weight:700}
+.fleet span.dead{text-decoration:line-through;color:#ff8a8a}
+.hide{display:none!important}
+.err{color:#ff8a8a;font-size:14px;margin-top:8px;text-align:center}
+.small{font-size:13px;color:var(--mut)}
+.log{font-size:14px;text-align:center;min-height:20px;margin-top:8px}
+#conn{text-align:center;margin-top:16px}
+</style>
+</head>
+<body>
+<main>
+  <h1>⚓ Battaglia Navale</h1>
+  <div class="sub">Due telefoni, una partita.</div>
+
+  <section id="lobby">
+    <div class="card">
+      <b>Crea una partita</b>
+      <p class="small">Ricevi un codice da dire all'avversario.</p>
+      <button class="pri full" id="bCreate">Crea partita</button>
+    </div>
+    <div class="card">
+      <b>Entra in una partita</b>
+      <p class="small">Inserisci il codice dell'altro giocatore.</p>
+      <input id="inCode" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="•••••" autocomplete="off">
+      <button class="full" id="bJoin">Entra</button>
+    </div>
+    <div class="err" id="lobbyErr"></div>
+  </section>
+
+  <section id="waiting" class="hide">
+    <div class="card" style="text-align:center">
+      <div class="small">Codice partita</div>
+      <div class="code" id="codeShow"></div>
+      <div class="small" id="waitMsg">In attesa dell'avversario…</div>
+      <div style="height:12px"></div>
+      <a id="bWa" class="hide" target="_blank" rel="noopener" style="display:block;background:#25d366;color:#062b14;font-weight:700;text-decoration:none;border-radius:10px;padding:12px;margin-bottom:8px">📲 Invita su WhatsApp</a>
+      <button id="bCancel">Annulla</button>
+    </div>
+  </section>
+
+  <section id="place" class="hide">
+    <div class="status" id="placeStatus"></div>
+    <div class="board" id="placeBoard"></div>
+    <div class="fleet" id="placeFleet"></div>
+    <div style="height:12px"></div>
+    <div class="row"><button id="bRot">↔ Orizzontale</button><button id="bUndo">Annulla</button></div>
+    <div style="height:8px"></div>
+    <div class="row"><button id="bRand">🎲 Casuale</button><button class="pri" id="bReady" disabled>Pronto!</button></div>
+  </section>
+
+  <section id="play" class="hide">
+    <div class="status" id="turn"></div>
+    <div class="lbl"><span>Mare nemico</span><span id="enemyLeft"></span></div>
+    <div class="board" id="enemyBoard"></div>
+    <div class="log" id="log"></div>
+    <div class="fleet" id="enemyFleet"></div>
+    <div class="lbl"><span>La tua flotta</span><span id="myLeft"></span></div>
+    <div class="board small" id="myBoard"></div>
+    <div id="overBox" class="hide" style="margin-top:14px"><button class="pri full" id="bRematch">Rivincita</button></div>
+  </section>
+
+  <div class="small" id="conn"></div>
+</main>
+
+<script>
+const N = 10;
+const SHIPS = [["Portaerei",5],["Corazzata",4],["Incrociatore",3],["Sottomarino",3],["Cacciatorpediniere",2]];
+const ROWS = "ABCDEFGHIJ";
+const $ = id => document.getElementById(id);
+const myId = Math.random().toString(36).slice(2, 10);
+
+// ---------- stato ----------
+let isHost = false, opp = null, code = "", raw = () => {}, leaveFn = () => {};
+let g = 1;                    // numero partita (per le rivincite)
+let phase = "lobby";
+let ships = [];               // [{name, cells:[i]}]
+let horiz = true;
+let shotsOnMe = {};           // i -> "hit"|"miss"
+let enemy = new Array(N*N).fill(null); // null|"miss"|"hit"|"sunk"
+let enemySunk = [];
+let pendingShot = null, myTurn = false, ready = false, oppReady = false, over = false, won = false;
+let lastEnemy = -1, lastMine = -1;
+
+const coord = i => ROWS[Math.floor(i/N)] + (i%N + 1);
+const vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch(e){} };
+function show(id){ for (const s of ["lobby","waiting","place","play"]) $(s).classList.toggle("hide", s !== id); }
+function setConn(t){ $("conn").textContent = t; }
+
+// ---------- messaggi affidabili (ack + reinvio) ----------
+let outSeq = 0;
+const pending = new Map(), seen = new Set();
+function rsend(type, payload = {}) {
+  const m = Object.assign({ _bn: 1, s: ++outSeq, type, from: myId, to: opp }, payload);
+  pending.set(m.s, m);
+  try { raw(m); } catch(e){}
+}
+setInterval(() => { pending.forEach(m => { m.to = m.to || opp; try { raw(m); } catch(e){} }); }, 1000);
+
+function onRaw(m) {
+  if (!m || m._bn !== 1 || m.from === myId) return;
+  if (m.to && m.to !== myId) return;
+  if (opp && m.from !== opp) return;
+  if (m.type === "ack") { pending.delete(m.a); return; }
+  try { raw({ _bn: 1, type: "ack", a: m.s, from: myId, to: m.from }); } catch(e){}
+  const key = m.from + ":" + m.s;
+  if (seen.has(key)) return;
+  seen.add(key);
+  handle(m);
+}
+
+// ---------- trasporto ----------
+function loadScript(src){
+  return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Impossibile caricare la libreria di rete.")); document.head.appendChild(s); });
+}
+
+async function connectRoom() {
+  setConn("Connessione…");
+  const room = await window.claude.use("room");
+  if (!room) throw new Error("Connessione non disponibile: apri la pagina da claude.ai con un account che ha accesso.");
+  const r = await room.join("bn-" + code);
+  r.on("bn", msg => onRaw(msg && msg.data), e => setConn("🔴 Connessione persa (" + e.code + ")"));
+  r.onConnection(c => setConn(c ? "🟢 Connesso" : "🟡 Riconnessione…"));
+  raw = m => r.emit("bn", m).catch(e => {
+    if (e && e.code === "not_permitted") setConn("⛔ Il tuo account può solo guardare: chi ha condiviso la pagina deve darti accesso da Collaboratore (o superiore).");
+  });
+  leaveFn = () => { try { r.leave(); } catch(e){} };
+}
+
+async function connectPeer() {
+  setConn("Connessione…");
+  if (!window.Peer) await loadScript("https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js");
+  const pid = "abovefpv-bnavale-" + code;
+  return new Promise((res, rej) => {
+    const opts = { config: { iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+      { urls: "stun:global.stun.twilio.com:3478" } ] } };
+    const peer = isHost ? new Peer(pid, opts) : new Peer(opts);
+    let dataConn = null;
+    leaveFn = () => { try { peer.destroy(); } catch(e){} };
+    const wire = c => {
+      c.on("data", d => onRaw(d));
+      c.on("open", () => { setConn("🟢 Connesso"); res(); });
+      c.on("close", () => setConn("🔴 Avversario disconnesso"));
+      raw = m => { if (c.open) c.send(m); };
+    };
+    peer.on("error", e => {
+      const msg = e.type === "unavailable-id" ? "Codice già in uso, riprova."
+                : e.type === "peer-unavailable" ? "Partita non trovata: controlla il codice."
+                : "Errore di rete (" + e.type + ")";
+      setConn("🔴 " + msg); rej(new Error(msg));
+    });
+    peer.on("open", () => {
+      if (isHost) {
+        peer.on("connection", c => { if (dataConn) { c.close(); return; } dataConn = c; wire(c); });
+        res();
+      } else {
+        dataConn = peer.connect(pid, { reliable: true }); wire(dataConn);
+      }
+    });
+  });
+}
+
+function connect() {
+  return (window.claude && typeof window.claude.use === "function") ? connectRoom() : connectPeer();
+}
+
+// ---------- lobby ----------
+$("bCreate").onclick = async () => {
+  $("lobbyErr").textContent = "";
+  isHost = true; code = String(Math.floor(10000 + Math.random()*90000));
+  $("codeShow").textContent = code; $("waitMsg").textContent = "In attesa dell'avversario…";
+  if (/^https?:$/.test(location.protocol)) {
+    const link = location.href.split("#")[0] + "#" + code;
+    $("bWa").href = "https://wa.me/?text=" + encodeURIComponent("⚓ Sfida a Battaglia Navale! Tocca il link per entrare nella partita: " + link);
+    $("bWa").classList.remove("hide");
+  }
+  show("waiting");
+  try { await connect(); } catch(e) { backToLobby(e.message); }
+};
+$("bJoin").onclick = async () => {
+  const c = $("inCode").value.replace(/\D/g, "");
+  if (c.length !== 5) { $("lobbyErr").textContent = "Il codice ha 5 cifre."; return; }
+  $("lobbyErr").textContent = "";
+  isHost = false; code = c;
+  $("bWa").classList.add("hide");
+  $("codeShow").textContent = code; $("waitMsg").textContent = "Mi collego alla partita…";
+  show("waiting");
+  try { await connect(); rsend("hello"); } catch(e) { backToLobby(e.message); }
+};
+$("bCancel").onclick = () => backToLobby("");
+function backToLobby(msg){
+  leaveFn(); raw = () => {}; opp = null; pending.clear();
+  phase = "lobby"; show("lobby"); $("lobbyErr").textContent = msg || ""; setConn("");
+}
+
+function paired(){ setConn("🟢 Connesso"); vib(80); newGame(g); }
+
+// ---------- protocollo di gioco ----------
+function handle(m) {
+  switch (m.type) {
+    case "hello":   if (isHost && !opp) { opp = m.from; rsend("welcome"); paired(); } break;
+    case "welcome": if (!isHost && !opp) { opp = m.from; paired(); } break;
+    case "rematch": if (m.g > g) newGame(m.g); break;
+    case "ready":
+      if (m.g > g) newGame(m.g);
+      if (m.g === g) { oppReady = true; if (ready && phase === "place") startPlay(); else renderPlace(); }
+      break;
+    case "shot": {
+      if (m.g !== g || phase !== "play" || over) return;
+      const i = m.i;
+      const si = ships.findIndex(s => s.cells.includes(i));
+      const hit = si >= 0;
+      shotsOnMe[i] = hit ? "hit" : "miss";
+      let sunk = null, name = null;
+      if (hit && ships[si].cells.every(c => shotsOnMe[c] === "hit")) { sunk = ships[si].cells; name = ships[si].name; }
+      const win = ships.every(s => s.cells.every(c => shotsOnMe[c] === "hit"));
+      rsend("res", { g, i, hit, sunk, name, win });
+      lastMine = i;
+      $("log").textContent = hit ? (sunk ? `💥 Ti hanno affondato il ${name}!` : `🔥 Colpito in ${coord(i)}`) : `💧 L'avversario ha mancato (${coord(i)})`;
+      if (hit) vib(sunk ? [120,60,120] : 100);
+      if (win) { over = true; won = false; } else myTurn = true;
+      renderPlay();
+      break;
+    }
+    case "res": {
+      if (m.g !== g || pendingShot !== m.i) return;
+      pendingShot = null;
+      enemy[m.i] = m.hit ? "hit" : "miss";
+      if (m.sunk) { m.sunk.forEach(c => enemy[c] = "sunk"); enemySunk.push(m.name); }
+      $("log").textContent = m.hit ? (m.sunk ? `🚢 Affondato: ${m.name}!` : `🎯 Colpito ${coord(m.i)}!`) : `💧 Acqua in ${coord(m.i)}`;
+      if (m.hit) vib(m.sunk ? [120,60,120] : 60);
+      if (m.win) { over = true; won = true; }
+      renderPlay();
+      break;
+    }
+  }
+}
+
+function newGame(ng) {
+  g = ng; phase = "place";
+  ships = []; shotsOnMe = {}; enemy = new Array(N*N).fill(null); enemySunk = [];
+  pendingShot = null; myTurn = false; ready = false; oppReady = false; over = false; won = false;
+  lastEnemy = lastMine = -1; $("log").textContent = "";
+  show("place"); renderPlace();
+}
+
+function startPlay() {
+  phase = "play";
+  myTurn = ((g % 2 === 1) === isHost);   // a ogni rivincita inizia l'altro
+  show("play"); renderPlay();
+}
+
+// ---------- piazzamento ----------
+function cellsFor(i, len, h) {
+  const r = Math.floor(i/N), c = i%N, out = [];
+  if (h ? c + len > N : r + len > N) return null;
+  for (let k = 0; k < len; k++) out.push(h ? i + k : i + k*N);
+  return out;
+}
+const occupied = () => new Set(ships.flatMap(s => s.cells));
+
+function placeAt(i) {
+  if (ready || ships.length >= SHIPS.length) return;
+  const [name, len] = SHIPS[ships.length];
+  let cells = cellsFor(i, len, horiz);
+  // se non entra, prova ad ancorarla all'indietro
+  if (!cells) { const r = Math.floor(i/N), c = i%N; cells = cellsFor(horiz ? r*N + (N-len) : (N-len)*N + c, len, horiz); }
+  const occ = occupied();
+  if (!cells || cells.some(c => occ.has(c))) { vib(40); flash(); return; }
+  ships.push({ name, cells }); renderPlace();
+}
+function flash(){ const b = $("placeBoard"); b.style.boxShadow = "0 0 0 2px #ff4d4d"; setTimeout(() => b.style.boxShadow = "", 250); }
+
+function randomFleet() {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const res = [], blocked = new Set(); let ok = true;
+    for (const [name, len] of SHIPS) {
+      let placed = false;
+      for (let t = 0; t < 300 && !placed; t++) {
+        const h = Math.random() < .5, cells = cellsFor(Math.floor(Math.random()*N*N), len, h);
+        if (!cells || cells.some(c => blocked.has(c))) continue;
+        res.push({ name, cells });
+        cells.forEach(c => { const r = Math.floor(c/N), cc = c%N;
+          for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) { const R=r+dr, C=cc+dc; if (R>=0&&R<N&&C>=0&&C<N) blocked.add(R*N+C); } });
+        placed = true;
+      }
+      if (!placed) { ok = false; break; }
+    }
+    if (ok) { ships = res; return; }
+  }
+}
+
+$("bRot").onclick = () => { horiz = !horiz; renderPlace(); };
+$("bUndo").onclick = () => { if (!ready) { ships.pop(); renderPlace(); } };
+$("bRand").onclick = () => { if (!ready) { randomFleet(); renderPlace(); } };
+$("bReady").onclick = () => {
+  if (ships.length !== SHIPS.length || ready) return;
+  ready = true; rsend("ready", { g });
+  if (oppReady) startPlay(); else renderPlace();
+};
+
+// ---------- board ----------
+function makeBoard(el, onTap) {
+  el.innerHTML = "";
+  for (let i = 0; i < N*N; i++) { const d = document.createElement("div"); d.className = "c"; if (onTap) d.onclick = () => onTap(i); el.appendChild(d); }
+}
+makeBoard($("placeBoard"), placeAt);
+makeBoard($("enemyBoard"), fire);
+makeBoard($("myBoard"), null);
+
+function renderPlace() {
+  const occ = occupied(), cs = $("placeBoard").children;
+  for (let i = 0; i < N*N; i++) cs[i].className = "c" + (occ.has(i) ? " ship" : "");
+  const n = ships.length;
+  $("placeStatus").className = "status";
+  $("placeStatus").textContent = ready ? (oppReady ? "Si parte!" : "Pronto ✔ — aspetto l'avversario…")
+    : n < SHIPS.length ? `Tocca il mare per piazzare: ${SHIPS[n][0]} (${SHIPS[n][1]})`
+    : "Flotta schierata! Premi Pronto" + (oppReady ? " — l'avversario è già pronto" : "");
+  $("placeFleet").innerHTML = SHIPS.map(([nm, l], k) => `<span class="${k < n ? "done" : k === n && !ready ? "cur" : ""}">${nm} ${"■".repeat(l)}</span>`).join("");
+  $("bRot").textContent = horiz ? "↔ Orizzontale" : "↕ Verticale";
+  $("bReady").disabled = ready || n !== SHIPS.length;
+  $("bRot").disabled = $("bUndo").disabled = $("bRand").disabled = ready;
+}
+
+// ---------- gioco ----------
+function fire(i) {
+  if (phase !== "play" || !myTurn || over || pendingShot !== null || enemy[i]) return;
+  pendingShot = i; myTurn = false; lastEnemy = i;
+  rsend("shot", { g, i });
+  renderPlay();
+}
+
+function renderPlay() {
+  const ec = $("enemyBoard").children;
+  for (let i = 0; i < N*N; i++) {
+    let cl = "c"; if (enemy[i]) cl += " " + enemy[i];
+    if (i === pendingShot) cl += " pend";
+    if (i === lastEnemy) cl += " last";
+    ec[i].className = cl;
+  }
+  const mc = $("myBoard").children, occ = occupied();
+  const sunkCells = new Set(ships.filter(s => s.cells.every(c => shotsOnMe[c] === "hit")).flatMap(s => s.cells));
+  for (let i = 0; i < N*N; i++) {
+    let cl = "c"; if (occ.has(i)) cl += " ship";
+    if (shotsOnMe[i]) cl += " " + (sunkCells.has(i) ? "sunk" : shotsOnMe[i]);
+    if (i === lastMine) cl += " last";
+    mc[i].className = cl;
+  }
+  const afloat = ships.filter(s => !s.cells.every(c => shotsOnMe[c] === "hit")).length;
+  $("enemyLeft").textContent = `Affondate ${enemySunk.length}/${SHIPS.length}`;
+  $("myLeft").textContent = `A galla ${afloat}/${SHIPS.length}`;
+  $("enemyFleet").innerHTML = SHIPS.map(([nm]) => nm).map(nm => `<span class="${enemySunk.includes(nm) ? "dead" : ""}">${nm}</span>`).join("");
+  $("enemyBoard").classList.toggle("active", myTurn && !over);
+  const t = $("turn");
+  if (over) { t.className = "status " + (won ? "win" : "lose"); t.textContent = won ? "🏆 Hai vinto!" : "☠️ Hai perso…"; }
+  else if (pendingShot !== null) { t.className = "status"; t.textContent = "Fuoco! …"; }
+  else if (myTurn) { t.className = "status me"; t.textContent = "🎯 Tocca a te: spara nel mare nemico"; }
+  else { t.className = "status"; t.textContent = "⏳ Turno dell'avversario"; }
+  $("overBox").classList.toggle("hide", !over);
+}
+
+$("bRematch").onclick = () => { newGame(g + 1); rsend("rematch", { g }); };
+
+// link d'invito: pagina#12345 → entra subito nella partita
+(function autoJoin(){
+  const h = location.hash.replace("#", "");
+  if (/^\d{5}$/.test(h)) {
+    $("inCode").value = h;
+    try { history.replaceState(null, "", location.pathname + location.search); } catch(e){}
+    setTimeout(() => $("bJoin").click(), 300);
+  }
+})();
+</script>
+</body>
+</html>
