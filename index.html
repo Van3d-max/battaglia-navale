@@ -169,50 +169,51 @@ async function connectRoom() {
   leaveFn = () => { try { r.leave(); } catch(e){} };
 }
 
-async function connectPeer() {
-  setConn("Connessione…");
-  if (!window.Peer) await loadScript("https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js");
-  const pid = "abovefpv-bnavale-" + code;
-  return new Promise((res, rej) => {
-    const opts = { config: { iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" },
-      { urls: "stun:global.stun.twilio.com:3478" } ] } };
-    const peer = isHost ? new Peer(pid, opts) : new Peer(opts);
-    let dataConn = null;
-    leaveFn = () => { try { peer.destroy(); } catch(e){} };
-    const wire = c => {
-      c.on("data", d => onRaw(d));
-      c.on("open", () => { setConn("🟢 Connesso"); res(); });
-      c.on("close", () => setConn("🔴 Avversario disconnesso"));
-      raw = m => { if (c.open) c.send(m); };
-    };
-    peer.on("error", e => {
-      const msg = e.type === "unavailable-id" ? "Codice già in uso, riprova."
-                : e.type === "peer-unavailable" ? "Partita non trovata: controlla il codice."
-                : "Errore di rete (" + e.type + ")";
-      setConn("🔴 " + msg); rej(new Error(msg));
+// Server MQTT pubblici che fanno da tramite: niente connessione diretta tra telefoni,
+// funziona anche su rete mobile. Ci si collega a tutti e i doppioni vengono scartati.
+const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt", "wss://test.mosquitto.org:8081"];
+let mqttClients = [];
+
+async function connectMqtt() {
+  setConn("Connessione al server…");
+  if (!window.mqtt) {
+    try { await loadScript("https://cdn.jsdelivr.net/npm/mqtt@5.16.1/dist/mqtt.min.js"); }
+    catch (e) { await loadScript("https://unpkg.com/mqtt@5.16.1/dist/mqtt.min.js"); }
+  }
+  const topic = "abovefpv/bnavale/v1/" + code;
+  const clients = []; mqttClients = clients;
+  const upd = () => { if (mqttClients !== clients) return; setConn(clients.some(c => c.connected) ? "🟢 Connesso al server" : "🟡 Riconnessione…"); };
+  leaveFn = () => { clients.forEach(c => { try { c.end(true); } catch(e){} }); if (mqttClients === clients) mqttClients = []; };
+  await new Promise((res, rej) => {
+    let done = false;
+    BROKERS.forEach(url => {
+      let c;
+      try { c = mqtt.connect(url, { clientId: "bn_" + myId + "_" + Math.random().toString(16).slice(2, 6), clean: true, reconnectPeriod: 2000, connectTimeout: 8000, keepalive: 20 }); }
+      catch (e) { return; }
+      clients.push(c);
+      c.on("connect", () => { c.subscribe(topic, { qos: 0 }); upd(); if (!done) { done = true; res(); } });
+      c.on("message", (t, payload) => { try { onRaw(JSON.parse(payload.toString())); } catch(e){} });
+      c.on("close", upd); c.on("offline", upd); c.on("error", () => {});
     });
-    peer.on("open", () => {
-      if (isHost) {
-        peer.on("connection", c => { if (dataConn) { c.close(); return; } dataConn = c; wire(c); });
-        res();
-      } else {
-        dataConn = peer.connect(pid, { reliable: true }); wire(dataConn);
-      }
-    });
+    setTimeout(() => { if (!done) { done = true; leaveFn(); rej(new Error("Nessun server raggiungibile: controlla la connessione internet e riprova.")); } }, 15000);
   });
+  raw = m => { const s = JSON.stringify(m); clients.forEach(c => { if (c.connected) c.publish(topic, s); }); };
 }
 
+// tornando sulla pagina (es. dopo WhatsApp) ricollega subito
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") mqttClients.forEach(c => { try { if (!c.connected) c.reconnect(); } catch(e){} });
+});
+
 function connect() {
-  return (window.claude && typeof window.claude.use === "function") ? connectRoom() : connectPeer();
+  return (window.claude && typeof window.claude.use === "function") ? connectRoom() : connectMqtt();
 }
 
 // ---------- lobby ----------
 $("bCreate").onclick = async () => {
   $("lobbyErr").textContent = "";
   isHost = true; code = String(Math.floor(10000 + Math.random()*90000));
-  $("codeShow").textContent = code; $("waitMsg").textContent = "In attesa dell'avversario…";
+  $("codeShow").textContent = code; $("waitMsg").textContent = "In attesa dell'avversario… tieni aperta questa pagina finché non entra.";
   if (/^https?:$/.test(location.protocol)) {
     const link = location.href.split("#")[0] + "#" + code;
     $("bWa").href = "https://wa.me/?text=" + encodeURIComponent("⚓ Sfida a Battaglia Navale! Tocca il link per entrare nella partita: " + link);
@@ -229,7 +230,10 @@ $("bJoin").onclick = async () => {
   $("bWa").classList.add("hide");
   $("codeShow").textContent = code; $("waitMsg").textContent = "Mi collego alla partita…";
   show("waiting");
-  try { await connect(); rsend("hello"); } catch(e) { backToLobby(e.message); }
+  try {
+    await connect(); rsend("hello");
+    setTimeout(() => { if (!opp && phase === "lobby" && code === c) $("waitMsg").textContent = "Non trovo la partita: controlla che sull'altro telefono la pagina sia aperta con il codice " + c + "."; }, 15000);
+  } catch(e) { backToLobby(e.message); }
 };
 $("bCancel").onclick = () => backToLobby("");
 function backToLobby(msg){
