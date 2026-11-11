@@ -3,40 +3,79 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#0b1726">
 <title>Battaglia Navale</title>
 <style>
-:root{--bg:#0b1726;--panel:#12233a;--sea:#173a5e;--line:#0e2a45;--ship:#9fb3c8;--hit:#ff4d4d;--sunk:#7a1a1a;--miss:#cfe3ff;--acc:#ffb020;--txt:#e8f0fa;--mut:#8aa4c0}
+:root{--bg:#0b1726;--panel:#12233a;--sea:#173a5e;--ship:#a9bdd2;--acc:#ffb020;--txt:#e8f0fa;--mut:#8aa4c0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{background:#0b1726}
+html{background:var(--bg)}
 body{margin:0;background:radial-gradient(circle at 50% -20%,#1b3b63,#0b1726 60%) fixed;color:var(--txt);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
-main{max-width:460px;margin:0 auto;padding:16px 14px 40px}
-h1{font-size:22px;margin:4px 0 2px;letter-spacing:.5px}
-.sub{color:var(--mut);font-size:13px;margin-bottom:14px}
+main{max-width:460px;margin:0 auto;padding:14px 12px 40px}
+header{display:flex;align-items:center;justify-content:space-between}
+h1{font-size:22px;margin:4px 0 2px}
+.sub{color:var(--mut);font-size:13px;margin-bottom:12px}
+#bMute{background:none;padding:6px 8px;font-size:20px}
 .card{background:var(--panel);border:1px solid #1f3756;border-radius:14px;padding:14px;margin-bottom:12px}
 .card p{margin:6px 0 10px}
 button{font:inherit;border:0;border-radius:10px;padding:12px 14px;background:#24456d;color:var(--txt);font-weight:600;cursor:pointer}
 button.pri{background:var(--acc);color:#1a1200}
+button.ghost{background:none;color:var(--mut);font-weight:500;font-size:14px;padding:8px;text-decoration:underline}
 button:disabled{opacity:.4;cursor:default}
 .row{display:flex;gap:8px}.row>*{flex:1}
 .full{width:100%}
 input{font:inherit;font-size:24px;letter-spacing:8px;text-align:center;padding:10px;border-radius:10px;border:1px solid #2b4a70;background:#0d1d31;color:var(--txt);width:100%;margin-bottom:8px}
 .code{font-size:44px;font-weight:800;letter-spacing:10px;text-align:center;color:var(--acc);margin:4px 0}
-.status{padding:10px 12px;border-radius:10px;background:#0d1d31;text-align:center;font-weight:600;margin-bottom:10px}
+.status{padding:10px 12px;border-radius:10px;background:#0d1d31;text-align:center;font-weight:600;margin-bottom:8px;transition:background .3s}
 .status.me{background:#3a2a05;color:var(--acc)}
 .status.win{background:#0f3d22;color:#7dffb0}
 .status.lose{background:#3d0f0f;color:#ff9a9a}
-.board{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;background:var(--line);padding:2px;border-radius:8px;width:100%;aspect-ratio:1/1;touch-action:manipulation;user-select:none}
-.board.small{width:62%;margin:0 auto}
+.status.err{background:#3d0f0f;color:#ffb0b0}
+.away{background:#4a3400;color:#ffd27a;border-radius:10px;padding:10px;text-align:center;font-size:14px;font-weight:600;margin-bottom:8px}
+/* punteggio */
+.score{display:flex;align-items:stretch;gap:8px;margin-bottom:8px}
+.score>div{flex:1;background:#0d1d31;border-radius:10px;padding:6px 8px;text-align:center}
+.score .who{font-size:12px;color:var(--mut)}
+.score .pts{font-size:26px;font-weight:800;line-height:1.1}
+.score .hits{font-size:12px;color:var(--mut)}
+.score .me .pts{color:var(--acc)}
+.score .turn{outline:2px solid var(--acc)}
+/* griglie */
+.board{display:grid;grid-template-columns:16px repeat(10,1fr);gap:2px;width:100%;touch-action:manipulation;user-select:none;-webkit-user-select:none;padding:3px;border-radius:10px}
+.board.small{width:70%;margin:0 auto;grid-template-columns:12px repeat(10,1fr)}
 .board.active{box-shadow:0 0 0 2px var(--acc)}
-.c{background:var(--sea);border-radius:3px;position:relative}
+.lab{display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--mut)}
+.small .lab{font-size:8px}
+.c{aspect-ratio:1/1;background:linear-gradient(160deg,#1b4570,#163a5e);border-radius:3px;position:relative}
 .c.ship{background:var(--ship)}
-.c.miss::after{content:"";position:absolute;inset:36%;border-radius:50%;background:var(--miss);opacity:.85}
-.c.hit{background:var(--hit)}
-.c.sunk{background:var(--sunk)}
-.c.hit::after,.c.sunk::after{content:"✕";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-weight:900;font-size:min(3.6vw,15px)}
-.c.pend{animation:p .5s infinite alternate}
-@keyframes p{to{background:var(--acc)}}
+.c.build{background:#e6c770;box-shadow:inset 0 0 0 2px #ffb020}
+.c.hint::after{content:"";position:absolute;inset:38%;border-radius:50%;background:rgba(255,176,32,.55)}
+.c.miss{background:linear-gradient(160deg,#235b8f,#1c4c7a)}
+.c.miss::after{content:"";position:absolute;inset:30%;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffffff,#8cc6f2);box-shadow:0 0 0 3px rgba(159,211,255,.22)}
+.c.hit{background:radial-gradient(circle,#ffb347,#e8380d 75%)}
+.c.hit::after{content:"🔥";position:absolute;inset:0;display:grid;place-items:center;font-size:min(4vw,17px);animation:flick .5s infinite alternate}
+.c.sunk{background:linear-gradient(160deg,#5a1010,#330808)}
+.c.sunk::after{content:"✕";position:absolute;inset:0;display:grid;place-items:center;color:#ff8a7a;font-weight:900;font-size:min(3.6vw,15px)}
+.small .c.hit::after{font-size:min(2.6vw,11px)}
+.small .c.sunk::after{font-size:min(2.6vw,11px)}
+.c.pend{animation:p .45s infinite alternate}
 .c.last{outline:2px solid var(--acc);outline-offset:-2px}
+@keyframes p{to{background:var(--acc)}}
+@keyframes flick{from{transform:scale(.88) rotate(-5deg);opacity:.8}to{transform:scale(1.12) rotate(5deg);opacity:1}}
+/* effetti */
+.fx{position:absolute;inset:0;pointer-events:none;z-index:5}
+.fx i{position:absolute;inset:0;border:2px solid #b8e0ff;border-radius:50%;animation:ring .9s ease-out forwards}
+.fx i:nth-child(2){animation-delay:.15s}
+.fx i:nth-child(3){animation-delay:.3s}
+.fx b{position:absolute;left:50%;top:50%;font-size:24px;transform:translate(-50%,-50%);animation:drop 1s ease-out forwards}
+.fx-hit b,.fx-sunk b{animation:boom .9s ease-out forwards;font-size:34px}
+.fx-sunk b{font-size:46px}
+.fx-hit::before,.fx-sunk::before{content:"";position:absolute;inset:-40%;border-radius:50%;background:radial-gradient(circle,rgba(255,220,120,.95),rgba(255,90,20,.6) 40%,transparent 70%);animation:flash .6s ease-out forwards}
+@keyframes ring{from{transform:scale(.2);opacity:1}to{transform:scale(2.6);opacity:0}}
+@keyframes drop{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}25%{opacity:1;transform:translate(-50%,-80%) scale(1.3)}100%{transform:translate(-50%,-160%) scale(.9);opacity:0}}
+@keyframes boom{0%{transform:translate(-50%,-50%) scale(.2);opacity:1}40%{transform:translate(-50%,-50%) scale(1.5)}100%{transform:translate(-50%,-50%) scale(2.1);opacity:0}}
+@keyframes flash{from{transform:scale(.3);opacity:1}to{transform:scale(1.6);opacity:0}}
+.shake{animation:shake .45s}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
 .lbl{font-size:13px;color:var(--mut);margin:12px 0 6px;display:flex;justify-content:space-between}
 .fleet{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;margin-top:10px}
 .fleet span{padding:3px 9px;border-radius:20px;background:#0d1d31}
@@ -45,25 +84,29 @@ input{font:inherit;font-size:24px;letter-spacing:8px;text-align:center;padding:1
 .fleet span.dead{text-decoration:line-through;color:#ff8a8a}
 .hide{display:none!important}
 .err{color:#ff8a8a;font-size:14px;margin-top:8px;text-align:center}
-.small{font-size:13px;color:var(--mut)}
-.log{font-size:14px;text-align:center;min-height:20px;margin-top:8px}
-#conn{text-align:center;margin-top:16px}
+.small-t{font-size:13px;color:var(--mut)}
+.log{font-size:15px;text-align:center;min-height:22px;margin-top:8px;font-weight:600}
+#conn{text-align:center;margin-top:14px;font-size:13px;color:var(--mut)}
 </style>
 </head>
 <body>
 <main>
-  <h1>⚓ Battaglia Navale</h1>
-  <div class="sub">Due telefoni, una partita.</div>
+  <header><div><h1>⚓ Battaglia Navale</h1><div class="sub">Due telefoni, una partita.</div></div><button id="bMute" title="Suoni">🔊</button></header>
 
   <section id="lobby">
+    <div class="card hide" id="resumeCard">
+      <b>Partita in corso</b>
+      <p class="small-t">Hai una partita aperta (codice <b id="resumeCode"></b>).</p>
+      <button class="pri full" id="bResume">↩︎ Rientra nella partita</button>
+    </div>
     <div class="card">
       <b>Crea una partita</b>
-      <p class="small">Ricevi un codice da dire all'avversario.</p>
+      <p class="small-t">Ricevi un codice e mandi l'invito su WhatsApp.</p>
       <button class="pri full" id="bCreate">Crea partita</button>
     </div>
     <div class="card">
       <b>Entra in una partita</b>
-      <p class="small">Inserisci il codice dell'altro giocatore.</p>
+      <p class="small-t">Inserisci il codice dell'altro giocatore.</p>
       <input id="inCode" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="•••••" autocomplete="off">
       <button class="full" id="bJoin">Entra</button>
     </div>
@@ -72,26 +115,32 @@ input{font:inherit;font-size:24px;letter-spacing:8px;text-align:center;padding:1
 
   <section id="waiting" class="hide">
     <div class="card" style="text-align:center">
-      <div class="small">Codice partita</div>
+      <div class="small-t">Codice partita</div>
       <div class="code" id="codeShow"></div>
-      <div class="small" id="waitMsg">In attesa dell'avversario…</div>
+      <div class="small-t" id="waitMsg"></div>
       <div style="height:12px"></div>
       <a id="bWa" class="hide" target="_blank" rel="noopener" style="display:block;background:#25d366;color:#062b14;font-weight:700;text-decoration:none;border-radius:10px;padding:12px;margin-bottom:8px">📲 Invita su WhatsApp</a>
-      <button id="bCancel">Annulla</button>
+      <button id="bCancel">Esci</button>
     </div>
   </section>
+
+  <div class="away hide" id="away">⚠️ L'avversario è uscito dal gioco. Aspetta: quando rientra si riparte da qui.</div>
 
   <section id="place" class="hide">
     <div class="status" id="placeStatus"></div>
     <div class="board" id="placeBoard"></div>
     <div class="fleet" id="placeFleet"></div>
-    <div style="height:12px"></div>
-    <div class="row"><button id="bRot">↔ Orizzontale</button><button id="bUndo">Annulla</button></div>
+    <p class="small-t" style="text-align:center;margin:8px 0">Tocca le caselle una alla volta, in fila. Tocca una nave finita per toglierla. Le navi non possono toccarsi.</p>
+    <div class="row"><button id="bUndo">↶ Annulla</button><button id="bClear">Svuota</button></div>
     <div style="height:8px"></div>
     <div class="row"><button id="bRand">🎲 Casuale</button><button class="pri" id="bReady" disabled>Pronto!</button></div>
   </section>
 
   <section id="play" class="hide">
+    <div class="score">
+      <div class="me" id="scBoxMe"><div class="who">Tu</div><div class="pts" id="scMe">0</div><div class="hits" id="hitsMe"></div></div>
+      <div id="scBoxOpp"><div class="who">Avversario</div><div class="pts" id="scOpp">0</div><div class="hits" id="hitsOpp"></div></div>
+    </div>
     <div class="status" id="turn"></div>
     <div class="lbl"><span>Mare nemico</span><span id="enemyLeft"></span></div>
     <div class="board" id="enemyBoard"></div>
@@ -102,321 +151,499 @@ input{font:inherit;font-size:24px;letter-spacing:8px;text-align:center;padding:1
     <div id="overBox" class="hide" style="margin-top:14px"><button class="pri full" id="bRematch">Rivincita</button></div>
   </section>
 
-  <div class="small" id="conn"></div>
+  <div style="text-align:center"><button class="ghost hide" id="bExit">Esci dalla partita</button></div>
+  <div id="conn"></div>
 </main>
 
 <script>
-const N = 10;
-const SHIPS = [["Portaerei",5],["Corazzata",4],["Incrociatore",3],["Sottomarino",3],["Cacciatorpediniere",2]];
-const ROWS = "ABCDEFGHIJ";
+const N = 10, LET = "ABCDEFGHIL";   // lettere italiane: niente J e K
+const TYPES = [["Corazzata",4,1],["Incrociatore",3,2],["Cacciatorpediniere",2,3],["Sottomarino",1,4]];
+const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt", "wss://test.mosquitto.org:8081"];
+const KEY = "bn_state_v2";
 const $ = id => document.getElementById(id);
-const myId = Math.random().toString(36).slice(2, 10);
-
-// ---------- stato ----------
-let isHost = false, opp = null, code = "", raw = () => {}, leaveFn = () => {};
-let g = 1;                    // numero partita (per le rivincite)
-let phase = "lobby";
-let ships = [];               // [{name, cells:[i]}]
-let horiz = true;
-let shotsOnMe = {};           // i -> "hit"|"miss"
-let enemy = new Array(N*N).fill(null); // null|"miss"|"hit"|"sunk"
-let enemySunk = [];
-let pendingShot = null, myTurn = false, ready = false, oppReady = false, over = false, won = false;
-let lastEnemy = -1, lastMine = -1;
-
-const coord = i => ROWS[Math.floor(i/N)] + (i%N + 1);
+const rid = () => Math.random().toString(36).slice(2, 10);
+const coord = i => LET[i % N] + (Math.floor(i / N) + 1);
 const vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch(e){} };
-function show(id){ for (const s of ["lobby","waiting","place","play"]) $(s).classList.toggle("hide", s !== id); }
-function setConn(t){ $("conn").textContent = t; }
+
+function emptyFleet(){ const f = []; TYPES.forEach(([t,l,n]) => { for (let k = 0; k < n; k++) f.push({ t, l, cells: null }); }); return f; }
+function blank(){
+  return { code:"", myId: rid(), isHost:false, opp:null, g:1, phase:"lobby",
+    fleet: emptyFleet(), building: [], ready:false, oppReady:false, oppFleet:null,
+    shotsOnMe:{}, enemy: new Array(N*N).fill(null), enemySunk: [],
+    pendingShot:null, myTurn:false, over:false, won:false, score:{me:0, opp:0},
+    lastEnemy:-1, lastMine:-1, log:"", outSeq:0, pending:{}, awaitSync:false };
+}
+
+// ---------- stato salvato sul telefono ----------
+let st = blank(), seen = new Set(), lastSeen = 0, raw = () => {}, leaveFn = () => {}, mqttClients = [];
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(Object.assign({}, st, { seen: [...seen].slice(-500) }))); } catch(e){} }
+function loadSaved(){
+  try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (!s || !s.code || s.phase === "lobby") return null; return s; } catch(e){ return null; }
+}
+function clearSaved(){ try { localStorage.removeItem(KEY); } catch(e){} }
+
+// ---------- suoni ----------
+let actx = null, muted = false;
+try { muted = localStorage.getItem("bn_muted") === "1"; } catch(e){}
+$("bMute").textContent = muted ? "🔇" : "🔊";
+$("bMute").onclick = () => { muted = !muted; $("bMute").textContent = muted ? "🔇" : "🔊"; try { localStorage.setItem("bn_muted", muted ? "1" : "0"); } catch(e){} };
+document.addEventListener("pointerdown", () => { try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch(e){} }, { passive: true });
+function sfx(kind){
+  if (muted || !actx) return;
+  try {
+    const t = actx.currentTime, dur = kind === "miss" ? 0.7 : kind === "sunk" ? 1.5 : 1.0;
+    const buf = actx.createBuffer(1, Math.floor(actx.sampleRate * dur), actx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = actx.createBufferSource(), f = actx.createBiquadFilter(), gn = actx.createGain();
+    src.buffer = buf;
+    if (kind === "miss") {
+      f.type = "bandpass"; f.Q.value = 1.1;
+      f.frequency.setValueAtTime(2200, t); f.frequency.exponentialRampToValueAtTime(350, t + dur);
+      gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.6, t + 0.04); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    } else {
+      f.type = "lowpass";
+      f.frequency.setValueAtTime(kind === "sunk" ? 1000 : 1600, t); f.frequency.exponentialRampToValueAtTime(70, t + dur);
+      gn.gain.setValueAtTime(1, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      const o = actx.createOscillator(), og = actx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(30, t + 0.6);
+      og.gain.setValueAtTime(0.9, t); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+      o.connect(og); og.connect(actx.destination); o.start(t); o.stop(t + 0.7);
+    }
+    src.connect(f); f.connect(gn); gn.connect(actx.destination); src.start(t); src.stop(t + dur);
+  } catch(e){}
+}
+
+// ---------- griglie con lettere e numeri ----------
+function makeBoard(el, onTap){
+  el.innerHTML = ""; const cells = [];
+  const lab = txt => { const d = document.createElement("div"); d.className = "lab"; d.textContent = txt; el.appendChild(d); };
+  lab("");
+  for (let c = 0; c < N; c++) lab(LET[c]);
+  for (let r = 0; r < N; r++) {
+    lab(r + 1);
+    for (let c = 0; c < N; c++) {
+      const i = r * N + c, d = document.createElement("div"); d.className = "c";
+      if (onTap) d.onclick = () => onTap(i);
+      el.appendChild(d); cells.push(d);
+    }
+  }
+  return cells;
+}
+const placeCells = makeBoard($("placeBoard"), placeTap);
+const enemyCells = makeBoard($("enemyBoard"), fire);
+const myCells = makeBoard($("myBoard"), null);
+
+function fx(cell, kind){
+  const e = document.createElement("div"); e.className = "fx fx-" + kind;
+  e.innerHTML = kind === "miss" ? "<i></i><i></i><i></i><b>💦</b>" : "<b>💥</b>";
+  cell.appendChild(e); setTimeout(() => e.remove(), 1300);
+}
+function shake(el){ el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+function effect(boardEl, cells, i, kind, sunkCells){
+  if (kind === "sunk" && sunkCells) sunkCells.forEach((c, k) => setTimeout(() => fx(cells[c], "sunk"), k * 90));
+  else fx(cells[i], kind);
+  if (kind !== "miss") shake(boardEl);
+  sfx(kind);
+  vib(kind === "miss" ? 30 : kind === "sunk" ? [150, 60, 150, 60, 200] : 120);
+}
 
 // ---------- messaggi affidabili (ack + reinvio) ----------
-let outSeq = 0;
-const pending = new Map(), seen = new Set();
-function rsend(type, payload = {}) {
-  const m = Object.assign({ _bn: 1, s: ++outSeq, type, from: myId, to: opp }, payload);
-  pending.set(m.s, m);
+function rsend(type, payload = {}){
+  const m = Object.assign({ _bn: 1, s: ++st.outSeq, type, from: st.myId, to: st.opp }, payload);
+  st.pending[m.s] = m; save();
   try { raw(m); } catch(e){}
 }
-setInterval(() => { pending.forEach(m => { m.to = m.to || opp; try { raw(m); } catch(e){} }); }, 1000);
+setInterval(() => {
+  for (const k in st.pending) { const m = st.pending[k]; if (st.opp && m.type !== "hello") m.to = st.opp; try { raw(m); } catch(e){} }
+}, 1000);
+setInterval(() => { if (st.opp) try { raw({ _bn: 1, type: "ping", from: st.myId, to: st.opp }); } catch(e){} }, 3000);
 
-function onRaw(m) {
-  if (!m || m._bn !== 1 || m.from === myId) return;
-  if (m.to && m.to !== myId) return;
-  if (opp && m.from !== opp) return;
-  if (m.type === "ack") { pending.delete(m.a); return; }
-  try { raw({ _bn: 1, type: "ack", a: m.s, from: myId, to: m.from }); } catch(e){}
+function onRaw(m){
+  if (!m || m._bn !== 1 || m.from === st.myId) return;
+  if (m.to && m.to !== st.myId) return;
+  const special = m.type === "hello" || m.type === "sync" || m.type === "welcome";
+  if (st.opp && m.from !== st.opp && !special) return;
+  if (m.from === st.opp) lastSeen = Date.now();
+  if (m.type === "ping") return;
+  if (m.type === "ack") { if (st.pending[m.a]) { delete st.pending[m.a]; save(); } return; }
+  // mentre rientro aspetto lo stato dall'avversario: il resto me lo rimanderà
+  if (st.awaitSync && !special) return;
+  try { raw({ _bn: 1, type: "ack", a: m.s, from: st.myId, to: m.from }); } catch(e){}
   const key = m.from + ":" + m.s;
   if (seen.has(key)) return;
   seen.add(key);
   handle(m);
+  render();
 }
 
-// ---------- trasporto ----------
+// ---------- rete: server MQTT pubblici come tramite ----------
 function loadScript(src){
   return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Impossibile caricare la libreria di rete.")); document.head.appendChild(s); });
 }
-
-async function connectRoom() {
-  setConn("Connessione…");
-  const room = await window.claude.use("room");
-  if (!room) throw new Error("Connessione non disponibile: apri la pagina da claude.ai con un account che ha accesso.");
-  const r = await room.join("bn-" + code);
-  r.on("bn", msg => onRaw(msg && msg.data), e => setConn("🔴 Connessione persa (" + e.code + ")"));
-  r.onConnection(c => setConn(c ? "🟢 Connesso" : "🟡 Riconnessione…"));
-  raw = m => r.emit("bn", m).catch(e => {
-    if (e && e.code === "not_permitted") setConn("⛔ Il tuo account può solo guardare: chi ha condiviso la pagina deve darti accesso da Collaboratore (o superiore).");
-  });
-  leaveFn = () => { try { r.leave(); } catch(e){} };
-}
-
-// Server MQTT pubblici che fanno da tramite: niente connessione diretta tra telefoni,
-// funziona anche su rete mobile. Ci si collega a tutti e i doppioni vengono scartati.
-const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt", "wss://test.mosquitto.org:8081"];
-let mqttClients = [];
-
-async function connectMqtt() {
+async function connect(){
+  leaveFn();
   setConn("Connessione al server…");
   if (!window.mqtt) {
     try { await loadScript("https://cdn.jsdelivr.net/npm/mqtt@5.16.1/dist/mqtt.min.js"); }
     catch (e) { await loadScript("https://unpkg.com/mqtt@5.16.1/dist/mqtt.min.js"); }
   }
-  const topic = "abovefpv/bnavale/v1/" + code;
+  const topic = "abovefpv/bnavale/v2/" + st.code;
   const clients = []; mqttClients = clients;
-  const upd = () => { if (mqttClients !== clients) return; setConn(clients.some(c => c.connected) ? "🟢 Connesso al server" : "🟡 Riconnessione…"); };
-  leaveFn = () => { clients.forEach(c => { try { c.end(true); } catch(e){} }); if (mqttClients === clients) mqttClients = []; };
+  const upd = () => { if (mqttClients === clients) setConn(clients.some(c => c.connected) ? "🟢 Connesso" : "🟡 Riconnessione…"); };
+  leaveFn = () => { clients.forEach(c => { try { c.end(true); } catch(e){} }); if (mqttClients === clients) mqttClients = []; raw = () => {}; };
   await new Promise((res, rej) => {
     let done = false;
     BROKERS.forEach(url => {
       let c;
-      try { c = mqtt.connect(url, { clientId: "bn_" + myId + "_" + Math.random().toString(16).slice(2, 6), clean: true, reconnectPeriod: 2000, connectTimeout: 8000, keepalive: 20 }); }
+      try { c = mqtt.connect(url, { clientId: "bn_" + st.myId + "_" + rid().slice(0, 4), clean: true, reconnectPeriod: 2000, connectTimeout: 8000, keepalive: 20 }); }
       catch (e) { return; }
       clients.push(c);
-      c.on("connect", () => { c.subscribe(topic, { qos: 0 }); upd(); if (!done) { done = true; res(); } });
+      c.on("connect", () => { c.subscribe(topic); upd(); if (!done) { done = true; res(); } });
       c.on("message", (t, payload) => { try { onRaw(JSON.parse(payload.toString())); } catch(e){} });
       c.on("close", upd); c.on("offline", upd); c.on("error", () => {});
     });
-    setTimeout(() => { if (!done) { done = true; leaveFn(); rej(new Error("Nessun server raggiungibile: controlla la connessione internet e riprova.")); } }, 15000);
+    setTimeout(() => { if (!done) { done = true; leaveFn(); rej(new Error("Nessun server raggiungibile: controlla internet e riprova.")); } }, 15000);
   });
   raw = m => { const s = JSON.stringify(m); clients.forEach(c => { if (c.connected) c.publish(topic, s); }); };
+  lastSeen = Date.now();
 }
-
-// tornando sulla pagina (es. dopo WhatsApp) ricollega subito
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") mqttClients.forEach(c => { try { if (!c.connected) c.reconnect(); } catch(e){} });
 });
-
-function connect() {
-  return (window.claude && typeof window.claude.use === "function") ? connectRoom() : connectMqtt();
-}
+function setConn(t){ $("conn").textContent = t; }
 
 // ---------- lobby ----------
+function inviteLink(){
+  if (!/^https?:$/.test(location.protocol)) { $("bWa").classList.add("hide"); return; }
+  const link = location.href.split("#")[0] + "#" + st.code;
+  $("bWa").href = "https://wa.me/?text=" + encodeURIComponent("⚓ Sfida a Battaglia Navale! Tocca il link per entrare nella partita: " + link);
+  $("bWa").classList.remove("hide");
+}
 $("bCreate").onclick = async () => {
-  $("lobbyErr").textContent = "";
-  isHost = true; code = String(Math.floor(10000 + Math.random()*90000));
-  $("codeShow").textContent = code; $("waitMsg").textContent = "In attesa dell'avversario… tieni aperta questa pagina finché non entra.";
-  if (/^https?:$/.test(location.protocol)) {
-    const link = location.href.split("#")[0] + "#" + code;
-    $("bWa").href = "https://wa.me/?text=" + encodeURIComponent("⚓ Sfida a Battaglia Navale! Tocca il link per entrare nella partita: " + link);
-    $("bWa").classList.remove("hide");
-  }
-  show("waiting");
-  try { await connect(); } catch(e) { backToLobby(e.message); }
+  leaveFn(); seen = new Set(); st = blank();
+  st.isHost = true; st.code = String(Math.floor(10000 + Math.random() * 90000)); st.phase = "waiting";
+  render();
+  try { await connect(); } catch(e) { toLobby(e.message); }
 };
-$("bJoin").onclick = async () => {
+$("bJoin").onclick = () => {
   const c = $("inCode").value.replace(/\D/g, "");
   if (c.length !== 5) { $("lobbyErr").textContent = "Il codice ha 5 cifre."; return; }
-  $("lobbyErr").textContent = "";
-  isHost = false; code = c;
-  $("bWa").classList.add("hide");
-  $("codeShow").textContent = code; $("waitMsg").textContent = "Mi collego alla partita…";
-  show("waiting");
-  try {
-    await connect(); rsend("hello");
-    setTimeout(() => { if (!opp && phase === "lobby" && code === c) $("waitMsg").textContent = "Non trovo la partita: controlla che sull'altro telefono la pagina sia aperta con il codice " + c + "."; }, 15000);
-  } catch(e) { backToLobby(e.message); }
+  const saved = loadSaved();
+  if (saved && saved.code === c) { resume(saved); return; }
+  join(c);
 };
-$("bCancel").onclick = () => backToLobby("");
-function backToLobby(msg){
-  leaveFn(); raw = () => {}; opp = null; pending.clear();
-  phase = "lobby"; show("lobby"); $("lobbyErr").textContent = msg || ""; setConn("");
+async function join(c){
+  leaveFn(); seen = new Set(); st = blank();
+  st.code = c; st.phase = "joining"; render();
+  try {
+    await connect(); rsend("hello", { restored: false });
+    setTimeout(() => { if (st.phase === "joining" && st.code === c) { $("waitMsg").textContent = "Non trovo la partita: controlla che sull'altro telefono il gioco sia aperto con il codice " + c + "."; } }, 15000);
+  } catch(e) { toLobby(e.message); }
+}
+async function resume(saved){
+  leaveFn();
+  st = Object.assign(blank(), saved); seen = new Set(saved.seen || []); delete st.seen;
+  if (st.phase === "joining") { join(st.code); return; }
+  st.awaitSync = st.phase !== "waiting" && !!st.opp;
+  render();
+  try {
+    await connect();
+    if (st.awaitSync) rsend("hello", { restored: true });
+  } catch(e) { toLobby(e.message); }
+}
+$("bResume").onclick = () => { const s = loadSaved(); if (s) resume(s); };
+
+let exitArmed = false;
+function exitGame(){
+  leaveFn(); clearSaved(); seen = new Set(); st = blank(); toLobby("");
+}
+$("bCancel").onclick = exitGame;
+$("bExit").onclick = () => {
+  if (!exitArmed) { exitArmed = true; $("bExit").textContent = "Sicuro? Tocca di nuovo per uscire"; setTimeout(() => { exitArmed = false; $("bExit").textContent = "Esci dalla partita"; }, 3000); return; }
+  exitArmed = false; $("bExit").textContent = "Esci dalla partita"; exitGame();
+};
+function toLobby(msg){ showLobby(msg); }
+function showLobby(msg){
+  show("lobby"); $("lobbyErr").textContent = msg || ""; if (!msg) setConn("");
+  const s = loadSaved();
+  $("resumeCard").classList.toggle("hide", !s);
+  if (s) $("resumeCode").textContent = s.code;
+  $("away").classList.add("hide"); $("bExit").classList.add("hide");
 }
 
-function paired(){ setConn("🟢 Connesso"); vib(80); newGame(g); }
-
-// ---------- protocollo di gioco ----------
-function handle(m) {
+// ---------- protocollo ----------
+function handle(m){
   switch (m.type) {
-    case "hello":   if (isHost && !opp) { opp = m.from; rsend("welcome"); paired(); } break;
-    case "welcome": if (!isHost && !opp) { opp = m.from; paired(); } break;
-    case "rematch": if (m.g > g) newGame(m.g); break;
+    case "hello":
+      if (st.phase === "waiting" && st.isHost && !st.opp) { st.opp = m.from; rsend("welcome"); newGame(st.g); vib(80); return; }
+      if (st.opp && st.phase !== "lobby") {
+        // pareggio: entrambi rientrati dalla memoria → decide chi ha creato la partita
+        if (st.awaitSync && !st.isHost && m.restored) return;
+        st.awaitSync = false; st.opp = m.from; st.pending = {}; lastSeen = Date.now();
+        sendSync();
+        if (st.pendingShot !== null) rsend("shot", { g: st.g, i: st.pendingShot });
+      }
+      return;
+    case "welcome":
+      if (st.phase === "joining" && !st.opp) { st.opp = m.from; st.isHost = false; newGame(1); vib(80); }
+      return;
+    case "sync": adoptSync(m); return;
+    case "rematch": if (m.g > st.g) newGame(m.g); return;
     case "ready":
-      if (m.g > g) newGame(m.g);
-      if (m.g === g) { oppReady = true; if (ready && phase === "place") startPlay(); else renderPlace(); }
-      break;
+      if (m.g > st.g) newGame(m.g);
+      if (m.g === st.g) { st.oppReady = true; st.oppFleet = m.fleet; if (st.ready && st.phase === "place") startPlay(); }
+      return;
     case "shot": {
-      if (m.g !== g || phase !== "play" || over) return;
-      const i = m.i;
-      const si = ships.findIndex(s => s.cells.includes(i));
-      const hit = si >= 0;
-      shotsOnMe[i] = hit ? "hit" : "miss";
-      let sunk = null, name = null;
-      if (hit && ships[si].cells.every(c => shotsOnMe[c] === "hit")) { sunk = ships[si].cells; name = ships[si].name; }
-      const win = ships.every(s => s.cells.every(c => shotsOnMe[c] === "hit"));
-      rsend("res", { g, i, hit, sunk, name, win });
-      lastMine = i;
-      $("log").textContent = hit ? (sunk ? `💥 Ti hanno affondato il ${name}!` : `🔥 Colpito in ${coord(i)}`) : `💧 L'avversario ha mancato (${coord(i)})`;
-      if (hit) vib(sunk ? [120,60,120] : 100);
-      if (win) { over = true; won = false; } else myTurn = true;
-      renderPlay();
-      break;
+      if (m.g !== st.g || st.phase !== "play" || st.over) return;
+      const i = m.i, si = st.fleet.findIndex(s => s.cells && s.cells.includes(i)), hit = si >= 0;
+      st.shotsOnMe[i] = hit ? "hit" : "miss";
+      let sunk = null, ship = null;
+      if (hit && st.fleet[si].cells.every(c => st.shotsOnMe[c] === "hit")) { sunk = st.fleet[si].cells; ship = st.fleet[si].t; }
+      const win = st.fleet.every(s => s.cells.every(c => st.shotsOnMe[c] === "hit"));
+      rsend("res", { g: st.g, i, hit, sunk, ship, win });
+      st.lastMine = i;
+      st.log = hit ? (sunk ? `💥 Ti hanno affondato: ${ship}!` : `🔥 Ti hanno colpito in ${coord(i)}`) : `💦 L'avversario ha fatto acqua in ${coord(i)}`;
+      if (win) { st.over = true; st.won = false; st.score.opp++; st.myTurn = false; }
+      else st.myTurn = !hit;       // chi colpisce continua
+      render();
+      effect($("myBoard"), myCells, i, sunk ? "sunk" : hit ? "hit" : "miss", sunk);
+      return;
     }
     case "res": {
-      if (m.g !== g || pendingShot !== m.i) return;
-      pendingShot = null;
-      enemy[m.i] = m.hit ? "hit" : "miss";
-      if (m.sunk) { m.sunk.forEach(c => enemy[c] = "sunk"); enemySunk.push(m.name); }
-      $("log").textContent = m.hit ? (m.sunk ? `🚢 Affondato: ${m.name}!` : `🎯 Colpito ${coord(m.i)}!`) : `💧 Acqua in ${coord(m.i)}`;
-      if (m.hit) vib(m.sunk ? [120,60,120] : 60);
-      if (m.win) { over = true; won = true; }
-      renderPlay();
-      break;
+      if (m.g !== st.g || st.pendingShot !== m.i) return;
+      st.pendingShot = null;
+      st.enemy[m.i] = m.hit ? "hit" : "miss";
+      if (m.sunk) { m.sunk.forEach(c => st.enemy[c] = "sunk"); st.enemySunk.push(m.ship); }
+      st.log = m.hit ? (m.sunk ? `💥 Affondato: ${m.ship}! Spara ancora` : `🔥 Colpito in ${coord(m.i)}! Spara ancora`) : `💦 Acqua in ${coord(m.i)}`;
+      if (m.win) { st.over = true; st.won = true; st.score.me++; st.myTurn = false; st.log = "💥 Hai affondato l'ultima nave!"; }
+      else st.myTurn = !!m.hit;
+      render();
+      effect($("enemyBoard"), enemyCells, m.i, m.sunk ? "sunk" : m.hit ? "hit" : "miss", m.sunk);
+      return;
     }
   }
 }
 
-function newGame(ng) {
-  g = ng; phase = "place";
-  ships = []; shotsOnMe = {}; enemy = new Array(N*N).fill(null); enemySunk = [];
-  pendingShot = null; myTurn = false; ready = false; oppReady = false; over = false; won = false;
-  lastEnemy = lastMine = -1; $("log").textContent = "";
-  show("place"); renderPlace();
+// stato completo per chi rientra (anche da un telefono/browser senza dati salvati)
+function sendSync(){
+  const shotsOnR = {}; st.enemy.forEach((v, i) => { if (v) shotsOnR[i] = v === "miss" ? "miss" : "hit"; });
+  const rEnemy = new Array(N*N).fill(null); for (const i in st.shotsOnMe) rEnemy[i] = st.shotsOnMe[i];
+  const rEnemySunk = [];
+  st.fleet.forEach(s => { if (s.cells && s.cells.every(c => st.shotsOnMe[c] === "hit")) { s.cells.forEach(c => rEnemy[c] = "sunk"); rEnemySunk.push(s.t); } });
+  const phase = st.phase === "waiting" || st.phase === "joining" ? "place" : st.phase;
+  const rTurn = phase === "play" && !st.over && st.pendingShot === null && !st.myTurn;
+  rsend("sync", { g: st.g, phase, rIsHost: !st.isHost, rFleet: st.oppFleet, rReady: st.oppReady, sReady: st.ready,
+    shotsOnR, rEnemy, rEnemySunk, rTurn, over: st.over, rWon: st.over && !st.won,
+    score: { me: st.score.opp, opp: st.score.me }, rLastMine: st.lastEnemy, rLastEnemy: st.lastMine });
+}
+function adoptSync(m){
+  if (!(st.awaitSync || st.phase === "joining")) return;
+  const sameGame = st.g === m.g, wasReady = st.ready && sameGame, localFleet = st.fleet, localBuild = st.building;
+  st.opp = m.from; st.isHost = m.rIsHost; st.g = m.g; st.awaitSync = false; st.phase = m.phase; st.pending = {};
+  if (m.rReady && m.rFleet) { st.fleet = m.rFleet; st.ready = true; st.building = []; }
+  else if (sameGame && st.code) { st.fleet = localFleet; st.building = localBuild; st.ready = wasReady; }
+  else { st.fleet = emptyFleet(); st.building = []; st.ready = false; }
+  st.oppReady = m.sReady; st.shotsOnMe = m.shotsOnR || {}; st.enemy = m.rEnemy; st.enemySunk = m.rEnemySunk || [];
+  st.pendingShot = null; st.myTurn = m.rTurn; st.over = m.over; st.won = m.rWon; st.score = m.score;
+  st.lastMine = m.rLastMine; st.lastEnemy = m.rLastEnemy; st.log = "↩︎ Rientrato nella partita";
+  lastSeen = Date.now();
+  if (st.phase === "place" && st.ready && !m.rReady) rsend("ready", { g: st.g, fleet: st.fleet });
+  if (st.phase === "place" && st.ready && st.oppReady) startPlay();
+  vib(80);
 }
 
-function startPlay() {
-  phase = "play";
-  myTurn = ((g % 2 === 1) === isHost);   // a ogni rivincita inizia l'altro
-  show("play"); renderPlay();
+function newGame(ng){
+  Object.assign(st, { g: ng, phase: "place", fleet: emptyFleet(), building: [], ready: false, oppReady: false, oppFleet: null,
+    shotsOnMe: {}, enemy: new Array(N*N).fill(null), enemySunk: [], pendingShot: null, myTurn: false, over: false, won: false,
+    lastEnemy: -1, lastMine: -1, log: "" });
+}
+function startPlay(){
+  st.phase = "play";
+  st.myTurn = ((st.g % 2 === 1) === st.isHost);   // a ogni rivincita inizia l'altro
+  st.log = st.myTurn ? "Inizi tu!" : "Inizia l'avversario";
 }
 
-// ---------- piazzamento ----------
-function cellsFor(i, len, h) {
-  const r = Math.floor(i/N), c = i%N, out = [];
-  if (h ? c + len > N : r + len > N) return null;
-  for (let k = 0; k < len; k++) out.push(h ? i + k : i + k*N);
-  return out;
+// ---------- costruzione navi casella per casella ----------
+const curSlot = () => st.fleet.find(s => !s.cells);
+const placedCells = () => new Set(st.fleet.flatMap(s => s.cells || []));
+function neighbors8(i){ const r = Math.floor(i/N), c = i%N, out = []; for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) { if (!dr && !dc) continue; const R=r+dr, C=c+dc; if (R>=0&&R<N&&C>=0&&C<N) out.push(R*N+C); } return out; }
+function inLine(cells){
+  if (cells.length <= 1) return true;
+  const rows = new Set(cells.map(i => Math.floor(i/N))), cols = new Set(cells.map(i => i%N));
+  let v; if (rows.size === 1) v = cells.map(i => i%N); else if (cols.size === 1) v = cells.map(i => Math.floor(i/N)); else return false;
+  v.sort((a,b) => a-b); for (let k = 1; k < v.length; k++) if (v[k] !== v[k-1] + 1) return false;
+  return true;
 }
-const occupied = () => new Set(ships.flatMap(s => s.cells));
-
-function placeAt(i) {
-  if (ready || ships.length >= SHIPS.length) return;
-  const [name, len] = SHIPS[ships.length];
-  let cells = cellsFor(i, len, horiz);
-  // se non entra, prova ad ancorarla all'indietro
-  if (!cells) { const r = Math.floor(i/N), c = i%N; cells = cellsFor(horiz ? r*N + (N-len) : (N-len)*N + c, len, horiz); }
-  const occ = occupied();
-  if (!cells || cells.some(c => occ.has(c))) { vib(40); flash(); return; }
-  ships.push({ name, cells }); renderPlace();
+function canAdd(i){
+  const cur = curSlot(); if (!cur) return "x";
+  if (st.building.includes(i)) return "x";
+  const placed = placedCells();
+  if (placed.has(i)) return "x";
+  if (neighbors8(i).some(n => placed.has(n))) return "Le navi non possono toccarsi, nemmeno in diagonale";
+  const cand = [...st.building, i];
+  if (cand.length > cur.l) return "x";
+  if (!inLine(cand)) return "Le caselle devono essere in fila, una accanto all'altra";
+  return "";
 }
-function flash(){ const b = $("placeBoard"); b.style.boxShadow = "0 0 0 2px #ff4d4d"; setTimeout(() => b.style.boxShadow = "", 250); }
+let flashMsg = "", flashT = 0;
+function flash(msg){ flashMsg = msg; clearTimeout(flashT); flashT = setTimeout(() => { flashMsg = ""; render(); }, 1800); vib(40); render(); }
 
-function randomFleet() {
-  for (let attempt = 0; attempt < 200; attempt++) {
-    const res = [], blocked = new Set(); let ok = true;
-    for (const [name, len] of SHIPS) {
+function placeTap(i){
+  if (st.phase !== "place" || st.ready) return;
+  const si = st.fleet.findIndex(s => s.cells && s.cells.includes(i));
+  if (si >= 0) { st.fleet[si].cells = null; render(); return; }           // togli nave finita
+  if (st.building.includes(i)) {                                         // togli casella in costruzione
+    const rest = st.building.filter(x => x !== i);
+    if (inLine(rest)) { st.building = rest; render(); } else flash("Puoi togliere solo le caselle alle estremità");
+    return;
+  }
+  const err = canAdd(i);
+  if (err) { if (err !== "x") flash(err); return; }
+  st.building.push(i);
+  const cur = curSlot();
+  if (st.building.length === cur.l) { cur.cells = st.building.slice().sort((a,b) => a-b); st.building = []; vib(25); }
+  render();
+}
+$("bUndo").onclick = () => {
+  if (st.ready) return;
+  if (st.building.length) st.building.pop();
+  else { for (let k = st.fleet.length - 1; k >= 0; k--) if (st.fleet[k].cells) { st.fleet[k].cells = null; break; } }
+  render();
+};
+$("bClear").onclick = () => { if (!st.ready) { st.fleet = emptyFleet(); st.building = []; render(); } };
+$("bRand").onclick = () => {
+  if (st.ready) return;
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const f = emptyFleet(), blocked = new Set(); let ok = true;
+    for (const s of f) {
       let placed = false;
-      for (let t = 0; t < 300 && !placed; t++) {
-        const h = Math.random() < .5, cells = cellsFor(Math.floor(Math.random()*N*N), len, h);
-        if (!cells || cells.some(c => blocked.has(c))) continue;
-        res.push({ name, cells });
-        cells.forEach(c => { const r = Math.floor(c/N), cc = c%N;
-          for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) { const R=r+dr, C=cc+dc; if (R>=0&&R<N&&C>=0&&C<N) blocked.add(R*N+C); } });
-        placed = true;
+      for (let t = 0; t < 400 && !placed; t++) {
+        const h = Math.random() < .5, i = Math.floor(Math.random()*N*N), r = Math.floor(i/N), c = i%N;
+        if (h ? c + s.l > N : r + s.l > N) continue;
+        const cells = []; for (let k = 0; k < s.l; k++) cells.push(h ? i + k : i + k*N);
+        if (cells.some(x => blocked.has(x))) continue;
+        s.cells = cells; cells.forEach(x => { blocked.add(x); neighbors8(x).forEach(n => blocked.add(n)); }); placed = true;
       }
       if (!placed) { ok = false; break; }
     }
-    if (ok) { ships = res; return; }
+    if (ok) { st.fleet = f; st.building = []; render(); return; }
   }
-}
-
-$("bRot").onclick = () => { horiz = !horiz; renderPlace(); };
-$("bUndo").onclick = () => { if (!ready) { ships.pop(); renderPlace(); } };
-$("bRand").onclick = () => { if (!ready) { randomFleet(); renderPlace(); } };
+};
 $("bReady").onclick = () => {
-  if (ships.length !== SHIPS.length || ready) return;
-  ready = true; rsend("ready", { g });
-  if (oppReady) startPlay(); else renderPlace();
+  if (st.ready || curSlot()) return;
+  st.ready = true; rsend("ready", { g: st.g, fleet: st.fleet });
+  if (st.oppReady) startPlay();
+  render();
 };
 
-// ---------- board ----------
-function makeBoard(el, onTap) {
-  el.innerHTML = "";
-  for (let i = 0; i < N*N; i++) { const d = document.createElement("div"); d.className = "c"; if (onTap) d.onclick = () => onTap(i); el.appendChild(d); }
+// ---------- sparare ----------
+function fire(i){
+  if (st.phase !== "play" || !st.myTurn || st.over || st.pendingShot !== null || st.enemy[i]) return;
+  st.pendingShot = i; st.myTurn = false; st.lastEnemy = i; st.log = "";
+  rsend("shot", { g: st.g, i });
+  render();
 }
-makeBoard($("placeBoard"), placeAt);
-makeBoard($("enemyBoard"), fire);
-makeBoard($("myBoard"), null);
+$("bRematch").onclick = () => { newGame(st.g + 1); rsend("rematch", { g: st.g }); render(); };
 
-function renderPlace() {
-  const occ = occupied(), cs = $("placeBoard").children;
-  for (let i = 0; i < N*N; i++) cs[i].className = "c" + (occ.has(i) ? " ship" : "");
-  const n = ships.length;
-  $("placeStatus").className = "status";
-  $("placeStatus").textContent = ready ? (oppReady ? "Si parte!" : "Pronto ✔ — aspetto l'avversario…")
-    : n < SHIPS.length ? `Tocca il mare per piazzare: ${SHIPS[n][0]} (${SHIPS[n][1]})`
-    : "Flotta schierata! Premi Pronto" + (oppReady ? " — l'avversario è già pronto" : "");
-  $("placeFleet").innerHTML = SHIPS.map(([nm, l], k) => `<span class="${k < n ? "done" : k === n && !ready ? "cur" : ""}">${nm} ${"■".repeat(l)}</span>`).join("");
-  $("bRot").textContent = horiz ? "↔ Orizzontale" : "↕ Verticale";
-  $("bReady").disabled = ready || n !== SHIPS.length;
-  $("bRot").disabled = $("bUndo").disabled = $("bRand").disabled = ready;
+// ---------- disegno ----------
+function show(id){ for (const s of ["lobby","waiting","place","play"]) $(s).classList.toggle("hide", s !== id); }
+function chips(counter){
+  return TYPES.map(([t, l, n]) => counter(t, l, n)).join("");
 }
-
-// ---------- gioco ----------
-function fire(i) {
-  if (phase !== "play" || !myTurn || over || pendingShot !== null || enemy[i]) return;
-  pendingShot = i; myTurn = false; lastEnemy = i;
-  rsend("shot", { g, i });
-  renderPlay();
-}
-
-function renderPlay() {
-  const ec = $("enemyBoard").children;
-  for (let i = 0; i < N*N; i++) {
-    let cl = "c"; if (enemy[i]) cl += " " + enemy[i];
-    if (i === pendingShot) cl += " pend";
-    if (i === lastEnemy) cl += " last";
-    ec[i].className = cl;
+function render(){
+  save();
+  if (st.phase === "lobby") return;
+  if (st.phase === "waiting" || st.phase === "joining" || st.awaitSync) {
+    show("waiting"); $("codeShow").textContent = st.code;
+    $("waitMsg").textContent = st.awaitSync ? "Rientro nella partita… aspetto l'avversario."
+      : st.phase === "waiting" ? "In attesa dell'avversario… dopo l'invito torna su questa pagina."
+      : "Mi collego alla partita…";
+    if (st.phase === "waiting") inviteLink(); else $("bWa").classList.add("hide");
+    $("away").classList.add("hide"); $("bExit").classList.add("hide");
+    return;
   }
-  const mc = $("myBoard").children, occ = occupied();
-  const sunkCells = new Set(ships.filter(s => s.cells.every(c => shotsOnMe[c] === "hit")).flatMap(s => s.cells));
+  $("bExit").classList.remove("hide");
+  if (st.phase === "place") renderPlace(); else renderPlay();
+  updAway();
+}
+function renderPlace(){
+  show("place");
+  const placed = placedCells(), cur = curSlot();
+  let hints = new Set();
+  if (st.building.length && !st.ready) st.building.forEach(b => [b-1, b+1, b-N, b+N].forEach(n => {
+    if (n < 0 || n >= N*N || (Math.abs((n%N) - (b%N)) > 1)) return;
+    if (canAdd(n) === "") hints.add(n);
+  }));
+  for (let i = 0; i < N*N; i++) placeCells[i].className = "c" + (placed.has(i) ? " ship" : st.building.includes(i) ? " build" : hints.has(i) ? " hint" : "");
+  const ps = $("placeStatus");
+  ps.className = "status" + (flashMsg ? " err" : "");
+  ps.textContent = flashMsg ? flashMsg
+    : st.ready ? (st.oppReady ? "Si parte!" : "Pronto ✔ — aspetto l'avversario…")
+    : cur ? (st.building.length ? `${cur.t} (${cur.l}): ${st.building.length}/${cur.l} caselle` : `Tocca una casella per iniziare: ${cur.t} da ${cur.l}`)
+    : "Flotta schierata! Premi Pronto" + (st.oppReady ? " — l'avversario è già pronto" : "");
+  $("placeFleet").innerHTML = chips((t, l, n) => {
+    const done = st.fleet.filter(s => s.t === t && s.cells).length;
+    const cls = done === n ? "done" : cur && cur.t === t && !st.ready ? "cur" : "";
+    return `<span class="${cls}">${t} ${"■".repeat(l)} ${done}/${n}</span>`;
+  });
+  $("bReady").disabled = st.ready || !!cur;
+  $("bUndo").disabled = $("bClear").disabled = $("bRand").disabled = st.ready;
+}
+function renderPlay(){
+  show("play");
+  for (let i = 0; i < N*N; i++) {
+    let cl = "c"; if (st.enemy[i]) cl += " " + st.enemy[i];
+    if (i === st.pendingShot) cl += " pend";
+    if (i === st.lastEnemy) cl += " last";
+    enemyCells[i].className = cl;
+  }
+  const occ = placedCells();
+  const sunkCells = new Set(st.fleet.filter(s => s.cells && s.cells.every(c => st.shotsOnMe[c] === "hit")).flatMap(s => s.cells));
   for (let i = 0; i < N*N; i++) {
     let cl = "c"; if (occ.has(i)) cl += " ship";
-    if (shotsOnMe[i]) cl += " " + (sunkCells.has(i) ? "sunk" : shotsOnMe[i]);
-    if (i === lastMine) cl += " last";
-    mc[i].className = cl;
+    if (st.shotsOnMe[i]) cl += " " + (sunkCells.has(i) ? "sunk" : st.shotsOnMe[i]);
+    if (i === st.lastMine) cl += " last";
+    myCells[i].className = cl;
   }
-  const afloat = ships.filter(s => !s.cells.every(c => shotsOnMe[c] === "hit")).length;
-  $("enemyLeft").textContent = `Affondate ${enemySunk.length}/${SHIPS.length}`;
-  $("myLeft").textContent = `A galla ${afloat}/${SHIPS.length}`;
-  $("enemyFleet").innerHTML = SHIPS.map(([nm]) => nm).map(nm => `<span class="${enemySunk.includes(nm) ? "dead" : ""}">${nm}</span>`).join("");
-  $("enemyBoard").classList.toggle("active", myTurn && !over);
+  const total = st.fleet.length;
+  const mySunk = st.fleet.filter(s => s.cells && s.cells.every(c => st.shotsOnMe[c] === "hit")).length;
+  $("enemyLeft").textContent = `Affondate ${st.enemySunk.length}/${total}`;
+  $("myLeft").textContent = `A galla ${total - mySunk}/${total}`;
+  $("enemyFleet").innerHTML = chips((t, l, n) => {
+    const left = n - st.enemySunk.filter(x => x === t).length;
+    return `<span class="${left ? "" : "dead"}">${t} ${"■".repeat(l)} ×${left}</span>`;
+  });
+  // punteggio: partite vinte + colpi a segno di questa partita
+  $("scMe").textContent = st.score.me; $("scOpp").textContent = st.score.opp;
+  $("hitsMe").textContent = `🎯 ${st.enemy.filter(v => v === "hit" || v === "sunk").length} colpi`;
+  $("hitsOpp").textContent = `🎯 ${Object.values(st.shotsOnMe).filter(v => v === "hit").length} colpi`;
+  $("scBoxMe").classList.toggle("turn", !st.over && (st.myTurn || st.pendingShot !== null));
+  $("scBoxOpp").classList.toggle("turn", !st.over && !st.myTurn && st.pendingShot === null);
+  $("enemyBoard").classList.toggle("active", st.myTurn && !st.over);
+  $("log").textContent = st.log || "";
   const t = $("turn");
-  if (over) { t.className = "status " + (won ? "win" : "lose"); t.textContent = won ? "🏆 Hai vinto!" : "☠️ Hai perso…"; }
-  else if (pendingShot !== null) { t.className = "status"; t.textContent = "Fuoco! …"; }
-  else if (myTurn) { t.className = "status me"; t.textContent = "🎯 Tocca a te: spara nel mare nemico"; }
+  if (st.over) { t.className = "status " + (st.won ? "win" : "lose"); t.textContent = st.won ? "🏆 Hai vinto!" : "☠️ Hai perso…"; }
+  else if (st.pendingShot !== null) { t.className = "status"; t.textContent = "Fuoco! …"; }
+  else if (st.myTurn) { t.className = "status me"; t.textContent = "🎯 Tocca a te: spara nel mare nemico"; }
   else { t.className = "status"; t.textContent = "⏳ Turno dell'avversario"; }
-  $("overBox").classList.toggle("hide", !over);
+  $("overBox").classList.toggle("hide", !st.over);
 }
+function updAway(){
+  const away = st.opp && !st.awaitSync && (st.phase === "place" || st.phase === "play") && Date.now() - lastSeen > 9000;
+  $("away").classList.toggle("hide", !away);
+}
+setInterval(() => { if (st.phase === "place" || st.phase === "play") updAway(); }, 1000);
 
-$("bRematch").onclick = () => { newGame(g + 1); rsend("rematch", { g }); };
-
-// link d'invito: pagina#12345 → entra subito nella partita
-(function autoJoin(){
-  const h = location.hash.replace("#", "");
+// ---------- avvio: link d'invito o partita salvata ----------
+(function boot(){
+  const h = location.hash.replace("#", ""), saved = loadSaved();
   if (/^\d{5}$/.test(h)) {
-    $("inCode").value = h;
     try { history.replaceState(null, "", location.pathname + location.search); } catch(e){}
-    setTimeout(() => $("bJoin").click(), 300);
+    if (saved && saved.code === h) resume(saved); else join(h);
+    return;
   }
+  if (saved) { resume(saved); return; }
+  showLobby("");
 })();
 </script>
 </body>
