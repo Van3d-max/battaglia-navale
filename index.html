@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#0b1726">
 <title>Battaglia Navale</title>
+<meta name="description" content="Battaglia navale per due telefoni: crea una partita, invita un amico su WhatsApp e gioca. Gratis, senza registrazione.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Battaglia Navale">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:title" content="⚓ Battaglia Navale – sfida un amico">
+<meta property="og:description" content="Due telefoni, una partita. Tocca il link ed entra in gioco.">
+<meta property="og:image" content="https://van3d-max.github.io/battaglia-navale/og.png">
 <style>
 :root{--bg:#0b1726;--panel:#12233a;--sea:#173a5e;--ship:#a9bdd2;--acc:#ffb020;--txt:#e8f0fa;--mut:#8aa4c0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -94,6 +105,11 @@ input{font:inherit;font-size:24px;letter-spacing:8px;text-align:center;padding:1
   <header><div><h1>⚓ Battaglia Navale</h1><div class="sub">Due telefoni, una partita.</div></div><button id="bMute" title="Suoni">🔊</button></header>
 
   <section id="lobby">
+    <div class="card hide" id="installCard">
+      <b>📲 Installa il gioco</b>
+      <p class="small-t" id="installTxt">Aggiungilo alla schermata Home: si apre come un'app, senza scaricare nessun APK.</p>
+      <button class="full" id="bInstall">Installa</button>
+    </div>
     <div class="card hide" id="resumeCard">
       <b>Partita in corso</b>
       <p class="small-t">Hai una partita aperta (codice <b id="resumeCode"></b>).</p>
@@ -633,6 +649,30 @@ function updAway(){
   $("away").classList.toggle("hide", !away);
 }
 setInterval(() => { if (st.phase === "place" || st.phase === "play") updAway(); }, 1000);
+
+// ---------- installazione come app (PWA) ----------
+let installEvt = null;
+const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
+}
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault(); installEvt = e;
+  if (!standalone) $("installCard").classList.remove("hide");
+});
+if (isIOS && !standalone) {
+  $("installCard").classList.remove("hide");
+  $("installTxt").innerHTML = "Su iPhone: tocca <b>Condividi</b> (il quadrato con la freccia) e poi <b>Aggiungi alla schermata Home</b>. Usa Safari.";
+  $("bInstall").classList.add("hide");
+}
+$("bInstall").onclick = async () => {
+  if (!installEvt) return;
+  installEvt.prompt();
+  try { await installEvt.userChoice; } catch(e){}
+  installEvt = null; $("installCard").classList.add("hide");
+};
+window.addEventListener("appinstalled", () => $("installCard").classList.add("hide"));
 
 // ---------- avvio: link d'invito o partita salvata ----------
 (function boot(){
